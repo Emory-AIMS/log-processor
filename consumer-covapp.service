@@ -1,0 +1,10 @@
+[Unit]
+Description=Consumer Covid App.
+
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/usr/bin/python3 /home/ubuntu/consumer-covapp/main.py /media/covid-tmp
+
+[Install]
+WantedBy=multi-user.target
