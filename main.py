@@ -21,7 +21,7 @@ BASE_DIR_S3 = LOCAL_PATH + "/" + BASE_DIR_TRANSFORMER
 
 def polling_queue():
     print("polling queue", LOCAL_PATH)
-    sqs = boto3.resource("sqs")
+    sqs = boto3.resource("sqs", region_name='us-west-1')
 
     queue_read = sqs.Queue(config.get_sqs_url_covapp())
 
@@ -61,7 +61,8 @@ def sync_files():
 
 
 def delete_tmp_folder():
-    dirpath = os.path.join(LOCAL_PATH, BASE_DIR_S3)
+    dirpath = os.path.join(os. getcwd(), LOCAL_PATH)
+    # dirpath = os.path.join(LOCAL_PATH, BASE_DIR_S3)
     if os.path.exists(dirpath) and os.path.isdir(dirpath):
         print("deleting temp folder")
         shutil.rmtree(dirpath)
@@ -81,12 +82,15 @@ def elaborate_message(body):
     delete_tmp_folder()
     create_tmp_folder()
 
-    if "ARN" in body:
-        local_path = s3_manager.download_file(body["ARN"], BASE_DIR_S3)
+    if "Records" in body:
+        record = dict(body['Records'][0])
+        arn = record['s3']['bucket']['arn'] + '/' 
+        file_name = arn + record['s3']['object']['key']
+        local_path = s3_manager.download_file(file_name, BASE_DIR_S3)
         if local_path is not None:
             transformer.run(local_path, BASE_DIR_S3)
             sync_files()
-            s3_manager.move_file(body["ARN"])
+            s3_manager.move_file(file_name)
 
     delete_tmp_folder()
 
